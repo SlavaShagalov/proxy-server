@@ -30,7 +30,6 @@ func (r *repository) Create(params *pRequests.Request) error {
 }
 
 func (r *repository) Get(id string) (*pRequests.Request, error) {
-	//r.log.Info("HAH")
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err

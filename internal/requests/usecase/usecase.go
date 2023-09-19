@@ -21,15 +21,3 @@ func (uc *usecase) Get(id string) (*requests.Request, error) {
 func (uc *usecase) List() ([]requests.Request, error) {
 	return uc.repo.List()
 }
-
-//func (uc *usecase) FullUpdate(params *boards.FullUpdateParams) (*models.Board, error) {
-//	return uc.repo.FullUpdate(params)
-//}
-//
-//func (uc *usecase) PartialUpdate(params *boards.PartialUpdateParams) (*models.Board, error) {
-//	return uc.repo.PartialUpdate(params)
-//}
-//
-//func (uc *usecase) Delete(id string) error {
-//	return uc.repo.Delete(id)
-//}

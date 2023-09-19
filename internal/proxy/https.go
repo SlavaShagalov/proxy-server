@@ -119,7 +119,7 @@ func (p *Proxy) httpsHandle(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err := resp.Write(tlsConn); err != nil {
+	if err = resp.Write(tlsConn); err != nil {
 		p.log.Error("Failed to send response to client", zap.Error(err))
 		http.Error(w, "error", http.StatusInternalServerError)
 		return

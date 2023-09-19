@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"bytes"
 	"go.uber.org/zap"
 	"io"
 	"net/http"
@@ -18,9 +19,19 @@ func (p *Proxy) httpHandle(w http.ResponseWriter, r *http.Request) {
 	r.Header.Del("Proxy-Connection")
 	r.RequestURI = ""
 
+	reqBody, _ := io.ReadAll(r.Body)
+	r.Body = io.NopCloser(bytes.NewReader(reqBody))
+
 	resp, err := p.client.Do(r)
 	if err != nil {
 		p.log.Error("Failed to send request to server", zap.Error(err))
+		http.Error(w, "error", http.StatusInternalServerError)
+		return
+	}
+
+	r.Body = io.NopCloser(bytes.NewReader(reqBody))
+	err = p.saveRequest(resp, r)
+	if err != nil {
 		http.Error(w, "error", http.StatusInternalServerError)
 		return
 	}

@@ -22,9 +22,9 @@ services:
     ports:
       - "8080:8080"
       - "443:443"
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
+    deploy:
+      restart_policy:
+        condition: on-failure
     networks:
       - mitm-network
 
@@ -36,9 +36,9 @@ services:
     container_name: mitm_api
     ports:
       - "8000:8000"
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
+    deploy:
+      restart_policy:
+        condition: on-failure
     networks:
       - mitm-network
 

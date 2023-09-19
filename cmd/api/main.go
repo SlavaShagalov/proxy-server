@@ -15,6 +15,7 @@ import (
 	requestsDel "github.com/SlavaShagalov/proxy-server/internal/requests/delivery/http"
 	requestsRepository "github.com/SlavaShagalov/proxy-server/internal/requests/repository/mongo"
 	requestsUsecase "github.com/SlavaShagalov/proxy-server/internal/requests/usecase"
+	scanDel "github.com/SlavaShagalov/proxy-server/internal/scan/delivery/http"
 )
 
 const (
@@ -45,6 +46,7 @@ func main() {
 	requestsUC := requestsUsecase.New(requestsRep)
 	requestsDel.RegisterHandlers(router, requestsUC)
 	repeatDel.RegisterHandlers(router, requestsRep, logger)
+	scanDel.RegisterHandlers(router, requestsRep, logger)
 
 	server := http.Server{
 		Addr:    apiAddress,

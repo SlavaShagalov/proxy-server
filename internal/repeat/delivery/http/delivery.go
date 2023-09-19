@@ -5,8 +5,10 @@ import (
 	"github.com/SlavaShagalov/proxy-server/internal/requests"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
+	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 type delivery struct {
@@ -28,16 +30,17 @@ func RegisterHandlers(mux *mux.Router, rep requests.Repository, log *zap.Logger)
 		log: log,
 	}
 
-	mux.HandleFunc("/repeat/{id}", del.get).Methods(http.MethodGet)
+	mux.HandleFunc("/repeat/{id}", del.repeat).Methods(http.MethodGet)
 }
 
-func (del *delivery) get(w http.ResponseWriter, r *http.Request) {
+func (del *delivery) repeat(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
 	req, err := del.rep.Get(id)
 	if err != nil {
-
+		http.Error(w, "error", http.StatusInternalServerError)
+		return
 	}
 
 	del.log.Debug("REPEAT", zap.String("id", req.ID))
@@ -48,10 +51,12 @@ func (del *delivery) get(w http.ResponseWriter, r *http.Request) {
 		Method: req.Req.Method,
 		URL:    url,
 		Header: req.Req.Headers,
+		Body:   io.NopCloser(strings.NewReader(req.Req.Body)),
 	})
 	if err != nil {
 		del.log.Error("Repeat request failed", zap.Error(err))
 		http.Error(w, "error", http.StatusInternalServerError)
+		return
 	}
 
 	del.log.Debug("SUCCESS", zap.String("id", req.ID))

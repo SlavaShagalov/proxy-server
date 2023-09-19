@@ -11,9 +11,8 @@ RUN CGO_ENABLED=0 go build -o /bin/proxy cmd/proxy/main.go
 
 FROM ubuntu AS setup_ca
 WORKDIR /
-COPY scripts/gen_cert.sh ./
-COPY ca.crt ./
-COPY ca.key ./
+COPY scripts/gen_cert.sh scripts/v3.ext ./
+COPY ca.crt ca.key ./
 RUN apt update -y && \
     apt install openssl ca-certificates && \
     mkdir -p /usr/local/share/ca-certificates && \
