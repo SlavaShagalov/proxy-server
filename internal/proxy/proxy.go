@@ -1,23 +1,38 @@
 package proxy
 
 import (
-	"log"
+	"github.com/SlavaShagalov/proxy-server/internal/requests"
+	"go.uber.org/zap"
 	"net/http"
 )
 
 type Proxy struct {
+	client *http.Client
+	rep    requests.Repository
+	log    *zap.Logger
+}
+
+func New(rep requests.Repository, log *zap.Logger) *Proxy {
+	return &Proxy{
+		client: &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		},
+		rep: rep,
+		log: log,
+	}
 }
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Method: %s\n", r.Method)
-	log.Printf("RequestURI: %s\n", r.RequestURI)
-	log.Printf("Proto: %s\n", r.Proto)
-	log.Printf("ContentLength: %d\n", r.ContentLength)
-	log.Printf("Header: %s\n", r.Header)
-	log.Printf("Host: %s\n", r.Host)
-	log.Printf("RemoteAddr: %s\n", r.RemoteAddr)
-	log.Printf("URL: %s\n", r.URL)
+	p.log.Debug("NEW",
+		zap.String("method", r.Method),
+		zap.String("host", r.Host),
+		zap.String("remote_addr", r.RemoteAddr))
 
-	r.Header.Del("Proxy-Connection")
-
+	if r.Method == http.MethodConnect {
+		p.httpsHandle(w, r)
+	} else {
+		p.httpHandle(w, r)
+	}
 }

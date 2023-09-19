@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  storage:
+    image: mongo:4.4-bionic
+    container_name: mitm_storage
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+      - mitm-network
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  proxy:
+    image: mitm_proxy
+    build:
+      context: .
+      dockerfile: ./cmd/proxy/Dockerfile
+    container_name: mitm_proxy
+    ports:
+      - "8080:8080"
+      - "443:443"
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+    networks:
+      - mitm-network
+
+  api:
+    image: mitm_api
+    build:
+      context: .
+      dockerfile: ./cmd/api/Dockerfile
+    container_name: mitm_api
+    ports:
+      - "8000:8000"
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+    networks:
+      - mitm-network
+
+networks:
+  mitm-network:
+    driver: bridge
+    name: mitm_network
