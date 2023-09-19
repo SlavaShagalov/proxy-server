@@ -59,8 +59,9 @@ func (r *repository) List() ([]pRequests.Request, error) {
 	defer cur.Close(context.TODO())
 
 	requests := []pRequests.Request{}
-	mongoRequest := new(Request)
+
 	for cur.Next(context.Background()) {
+		mongoRequest := new(Request)
 		err = cur.Decode(mongoRequest)
 		if err != nil {
 			r.log.Error(constants.DBError, zap.Error(err))
