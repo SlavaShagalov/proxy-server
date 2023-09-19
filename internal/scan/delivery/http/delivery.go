@@ -2,7 +2,9 @@ package http
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
+	pErrors "github.com/SlavaShagalov/proxy-server/internal/pkg/errors"
 	"github.com/SlavaShagalov/proxy-server/internal/requests"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -41,12 +43,23 @@ func (del *delivery) scan(w http.ResponseWriter, r *http.Request) {
 
 	dbReq, err := del.rep.Get(id)
 	if err != nil {
-
+		if err == pErrors.ErrRequestNotFound {
+			http.Error(w, "request not found", http.StatusNotFound)
+			return
+		}
+		del.log.Error("Get request error", zap.Error(err))
+		http.Error(w, "error", http.StatusInternalServerError)
+		return
 	}
 
 	del.log.Debug("SCAN", zap.String("id", dbReq.ID))
 
-	url, _ := stdUrl.Parse(dbReq.Req.Path)
+	url, err := stdUrl.Parse(dbReq.Req.Path)
+	if err != nil {
+		del.log.Error("Parse path failed", zap.Error(err))
+		http.Error(w, "error", http.StatusInternalServerError)
+		return
+	}
 	q := url.Query()
 
 	apiResp := response{
@@ -80,6 +93,21 @@ func (del *delivery) scan(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer resp.Body.Close()
+
+		if resp.Header.Get("Content-Encoding") == "gzip" {
+			reader, err := gzip.NewReader(bytes.NewReader(respBody))
+			if err != nil {
+				del.log.Error("Create gzip reader failed", zap.Error(err))
+				return
+			}
+			defer reader.Close()
+
+			respBody, err = io.ReadAll(reader)
+			if err != nil {
+				del.log.Error("Read uncompressed data", zap.Error(err))
+				return
+			}
+		}
 
 		if bytes.Contains(respBody, []byte(xssTest)) {
 			apiResp.GetInsecure = append(apiResp.GetInsecure, key)
@@ -129,7 +157,12 @@ func (del *delivery) scan(w http.ResponseWriter, r *http.Request) {
 		postValues.Set(key, oldValue)
 	}
 
-	data, _ := json.Marshal(apiResp)
+	data, err := json.Marshal(apiResp)
+	if err != nil {
+		del.log.Error("Marshal error", zap.Error(err))
+		http.Error(w, "error", http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(data)
